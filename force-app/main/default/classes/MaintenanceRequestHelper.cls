@@ -18,22 +18,17 @@ public with sharing class MaintenanceRequestHelper {
 
         // * Id List to use For WHERE Clause of SOQL
         List<Id> mainReqIdList = new List<Id>();
-        List<Id> mainReqVehList = new List<Id>();
         for (Case cs : updList) {
             mainReqIdList.add(cs.Id);
-            if (cs.Vehicle__c != null) {
-                mainReqVehList.add(cs.Vehicle__c);
-            }
         }
 
+        // ** SOQL Queries
         // * Get 'Equipment Maintenance Item' List
         List<Equipment_Maintenance_Item__c> emiList = [
-            SELECT Equipment__c, Maintenance_Request__c, Quantity__c
+            SELECT Equipment__c, Maintenance_Request__c
             FROM Equipment_Maintenance_Item__c
             WHERE Maintenance_Request__c IN :mainReqIdList
         ];
-
-        System.debug('# of Related EMI: ' + emiList.size());
 
         // * 'Equipment' Id List to use For WHERE Clause of SOQL
         List<Id> eqIdList = new List<Id>();
@@ -44,18 +39,19 @@ public with sharing class MaintenanceRequestHelper {
         // * Get 'Equipment' List To Get Equip's Maintenance Cycle
         List<Product2> eqList = [SELECT Name, Maintenance_Cycle__c FROM Product2 WHERE Id IN :eqIdList];
 
-        // * Get 'Vehicle' List To Assign to New Maintenance Request
-        List<Vehicle__c> vcList = [SELECT Id FROM Vehicle__c WHERE Id IN :mainReqVehList];
-
-        // 새 'Maintenance Request' List
+        // * Created 'Maintenance Request' List
         List<Case> newReqList = new List<Case>();
 
-        // Equipment Maintenance List Related w/ Original Maintenance Request Record
-        List<Equipment_Maintenance_Item__c> relatedEmiList = new List<Equipment_Maintenance_Item__c>();
+        // * Created 'Equipment Maintenance Item' List (Make Relationship)
+        List<Equipment_Maintenance_Item__c> newEmiList = new List<Equipment_Maintenance_Item__c>();
+
+        // for Map EMIs to New Maintenance Requests
+        Map<Case, List<Equipment_Maintenance_Item__c>> emiToReq = new Map<Case, List<Equipment_Maintenance_Item__c>>();
 
         // * 각 Maintenance Request 별 처리
         for (Case cs : updList) {
             if ((cs.Type == 'Repair' || cs.Type == 'Routine Maintenance') && cs.Status == 'Closed') {
+                List<Equipment_Maintenance_Item__c> relatedEmiList = new List<Equipment_Maintenance_Item__c>();
                 List<Product2> relatedEqList = new List<Product2>();
 
                 // * To Calculate Due Date of Request
@@ -96,28 +92,21 @@ public with sharing class MaintenanceRequestHelper {
                     Type = 'Routine Maintenance',
                     Vehicle__c = cs.Vehicle__c
                 );
-
+                emiToReq.put(newMainReq, relatedEmiList);
                 newReqList.add(newMainReq);
             }
         } // for문 끝(Trigger에서 받은 Update된 Maintenance Request)
 
         // * 새 Maintenance Request 생성
         insert newReqList;
-        // * insert했으므로 Id값 생성됨
 
-        // * Make Relationship - Equipment Maintenance List (Junction)
-        List<Equipment_Maintenance_Item__c> newEmiList = new List<Equipment_Maintenance_Item__c>();
-
-        System.debug('Related EMI List Size: ' + relatedEmiList.size());
-        System.debug('New Request List Size: ' + newReqList.size());
-        if (relatedEmiList.size() > 0) {
-            for (Equipment_Maintenance_Item__c rEmi : relatedEmiList) {
-                for (Case newReq : newReqList) {
-                    // Maintenance_Request__c, Equipment__c, Quantity__c
+        for (Case newReq : newReqList) {
+            if (emiToReq.get(newReq).size() > 0) {
+                for (Equipment_Maintenance_Item__c rEmi : emiToReq.get(newReq)) {
+                    // Maintenance_Request__c, Equipment__c
                     Equipment_Maintenance_Item__c newEmi = new Equipment_Maintenance_Item__c();
                     newEmi.Maintenance_Request__c = newReq.Id;
                     newEmi.Equipment__c = rEmi.Equipment__c;
-                    newEmi.Quantity__c = rEmi.Quantity__c;
 
                     newEmiList.add(newEmi);
                 }
