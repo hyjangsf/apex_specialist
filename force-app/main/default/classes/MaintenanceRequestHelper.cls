@@ -46,8 +46,8 @@ public with sharing class MaintenanceRequestHelper {
         List<Equipment_Maintenance_Item__c> newEmiList = new List<Equipment_Maintenance_Item__c>();
 
         // for Map EMIs to New Maintenance Requests
-        Map<Case, List<Equipment_Maintenance_Item__c>> emiToReq = new Map<Case, List<Equipment_Maintenance_Item__c>>();
-
+        Map<Integer, List<Equipment_Maintenance_Item__c>> emiToReq = new Map<Integer, List<Equipment_Maintenance_Item__c>>();
+        Integer idxOfUpd = 0;
         // * 각 Maintenance Request 별 처리
         for (Case cs : updList) {
             if ((cs.Type == 'Repair' || cs.Type == 'Routine Maintenance') && cs.Status == 'Closed') {
@@ -86,13 +86,13 @@ public with sharing class MaintenanceRequestHelper {
 
                 // 2. 새 레코드에 대한 요구 조건에 맞추어 생성
                 Case newMainReq = new Case(
-                    Subject = 'New Maintenance Request by \'' + cs.Subject + '\'',
+                    Subject = 'New Maintenance Request For \'' + cs.Subject + '\'',
                     Date_Reported__c = System.today(),
                     Date_Due__c = System.today().addDays(shortest),
                     Type = 'Routine Maintenance',
                     Vehicle__c = cs.Vehicle__c
                 );
-                emiToReq.put(newMainReq, relatedEmiList);
+                emiToReq.put(idxOfUpd++, relatedEmiList.deepClone());
                 newReqList.add(newMainReq);
             }
         } // for문 끝(Trigger에서 받은 Update된 Maintenance Request)
@@ -100,9 +100,11 @@ public with sharing class MaintenanceRequestHelper {
         // * 새 Maintenance Request 생성
         insert newReqList;
 
+        idxOfUpd = 0;
+
         for (Case newReq : newReqList) {
-            if (emiToReq.get(newReq) != null) {
-                for (Equipment_Maintenance_Item__c rEmi : emiToReq.get(newReq)) {
+            if (emiToReq.get(idxOfUpd) != null) {
+                for (Equipment_Maintenance_Item__c rEmi : emiToReq.get(idxOfUpd)) {
                     // Maintenance_Request__c, Equipment__c
                     Equipment_Maintenance_Item__c newEmi = new Equipment_Maintenance_Item__c();
                     newEmi.Maintenance_Request__c = newReq.Id;
@@ -111,6 +113,7 @@ public with sharing class MaintenanceRequestHelper {
                     newEmiList.add(newEmi);
                 }
             }
+            idxOfUpd++;
         }
         insert newEmiList;
     } // updateWorkOrders 끝
