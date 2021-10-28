@@ -101,7 +101,7 @@ public with sharing class MaintenanceRequestHelper {
         insert newReqList;
 
         for (Case newReq : newReqList) {
-            if (emiToReq.get(newReq).size() > 0) {
+            if (emiToReq.get(newReq) != null) {
                 for (Equipment_Maintenance_Item__c rEmi : emiToReq.get(newReq)) {
                     // Maintenance_Request__c, Equipment__c
                     Equipment_Maintenance_Item__c newEmi = new Equipment_Maintenance_Item__c();
