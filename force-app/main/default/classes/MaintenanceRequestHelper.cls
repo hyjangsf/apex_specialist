@@ -9,7 +9,7 @@ public with sharing class MaintenanceRequestHelper {
         //   1) 기존 기준이 되는 레코드와 같은 Vehicle과 Equipment(Product2) 레코드를 참조해야 함
         //   2) Type은 Routine Maintenance
         //   3) Subject는 Null이 아니어야 함
-        //   4) Report Date 필드는 이 레코드 생성일로 채움 - the request가 기존 request얘기인가?
+        //   4) Report Date 필드는 이 레코드 생성일로 채움
         //   5) 기존 레코드가 참조하는 Equipment의 Maintenance Cycle중 가장 짧은 Cycle을 이용해 Due Date 산정
         //
         // 3. 모든 과정은 Bulk로 작동하도록 설계
