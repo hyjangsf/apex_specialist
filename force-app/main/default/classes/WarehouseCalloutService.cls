@@ -1,6 +1,7 @@
-public with sharing class WarehouseCalloutService {
+public class WarehouseCalloutService implements Queueable, Database.AllowsCallouts {
     private static final String WAREHOUSE_URL = 'https://th-superbadge-apex.herokuapp.com/equipment';
-    public static void getEquipmentsFromExt() {
+
+    public void execute(QueueableContext context) {
         Http http = new Http();
         HttpRequest request = new HttpRequest();
 
@@ -11,7 +12,7 @@ public with sharing class WarehouseCalloutService {
 
         if (response.getStatusCode() == 200) {
             String resJson = response.getBody();
-            resJson = resJson.replace('_id', 'Id');
+            // resJson = resJson.replace('_id', 'Id');
             resJson = resJson.replace('replacement', 'Replacement_Part__c');
             resJson = resJson.replace('quantity', 'QuantityUnitOfMeasure');
             resJson = resJson.replace('name', 'Name');
