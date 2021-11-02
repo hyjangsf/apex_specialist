@@ -1,14 +1,16 @@
-@IsTest
+@isTest
 private class WarehouseCalloutServiceTest {
     // implement your mock callout test here
-    @IsTest
+    @isTest
     static void testCallout() {
-        Test.setMock(WarehouseCalloutServiceMock.class, new WarehouseCalloutServiceMock());
+        WarehouseCalloutService wcs = new WarehouseCalloutService();
+        Test.setMock(HttpCalloutMock.class, new WarehouseCalloutServiceMock());
 
         Test.startTest();
-        WarehouseCalloutService warehouseCallout = new WarehouseCalloutService();
-        String sch = '0 0 1 * * ?';
-        String jobID = System.enqueueJob(warehouseCallout);
+        System.enqueueJob(wcs);
         Test.stopTest();
+
+        Product2 testEq = [SELECT Id, Name FROM Product2 WHERE ExternalId = '1234567'];
+        System.assertEquals('Test Equipment', testEq.Name);
     }
 }

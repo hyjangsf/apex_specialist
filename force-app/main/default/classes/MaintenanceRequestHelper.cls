@@ -21,6 +21,7 @@ public with sharing class MaintenanceRequestHelper {
         for (Case cs : updList) {
             mainReqIdList.add(cs.Id);
         }
+        System.debug('updList(Trigger.New) Size: ' + updList.size());
 
         // ** SOQL Queries
         // * Get 'Equipment Maintenance Item' List
@@ -29,6 +30,7 @@ public with sharing class MaintenanceRequestHelper {
             FROM Equipment_Maintenance_Item__c
             WHERE Maintenance_Request__c IN :mainReqIdList
         ];
+        System.debug('emiList ' + emiList.size());
 
         // * 'Equipment' Id List to use For WHERE Clause of SOQL
         List<Id> eqIdList = new List<Id>();
@@ -48,6 +50,8 @@ public with sharing class MaintenanceRequestHelper {
         // for Map EMIs to New Maintenance Requests
         Map<Integer, List<Equipment_Maintenance_Item__c>> emiToReq = new Map<Integer, List<Equipment_Maintenance_Item__c>>();
         Integer idxOfUpd = 0;
+
+        System.debug('Start Processing Each Requests');
         // * 각 Maintenance Request 별 처리
         for (Case cs : updList) {
             if ((cs.Type == 'Repair' || cs.Type == 'Routine Maintenance') && cs.Status == 'Closed') {
